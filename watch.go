@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/cortesi/devd/livereload"
-	"github.com/cortesi/modd/watch"
+	"github.com/cortesi/moddwatch"
 	"github.com/cortesi/termlog"
 )
 
@@ -15,16 +15,19 @@ func (r Route) Watch(ch chan []string, excludePatterns []string, log termlog.Log
 	switch r.Endpoint.(type) {
 	case *filesystemEndpoint:
 		ep := *r.Endpoint.(*filesystemEndpoint)
-		modchan := make(chan *watch.Mod, 1)
-		_, err := watch.Watch([]string{string(ep)}, batchTime, modchan)
+		modchan := make(chan *moddwatch.Mod, 1)
+		_, err := moddwatch.Watch([]string{string(ep) + "/..."}, batchTime, modchan)
 		if err != nil {
 			return err
 		}
 		go func() {
 			for mod := range modchan {
-				mod.Filter([]string{"*"}, excludePatterns)
-				if !mod.Empty() {
-					ch <- mod.All()
+				filteredMod, err := mod.Filter([]string{"**/*"}, excludePatterns)
+				if err != nil {
+					log.Shout("Error filtering watches: %s", err)
+				}
+				if !filteredMod.Empty() {
+					ch <- filteredMod.All()
 				}
 			}
 		}()
@@ -36,16 +39,19 @@ func (r Route) Watch(ch chan []string, excludePatterns []string, log termlog.Log
 func WatchPaths(paths, excludePatterns []string, reloader livereload.Reloader, log termlog.Logger) error {
 	ch := make(chan []string, 1)
 	for _, path := range paths {
-		modchan := make(chan *watch.Mod, 1)
-		_, err := watch.Watch([]string{path}, batchTime, modchan)
+		modchan := make(chan *moddwatch.Mod, 1)
+		_, err := moddwatch.Watch([]string{path}, batchTime, modchan)
 		if err != nil {
 			return err
 		}
 		go func() {
 			for mod := range modchan {
-				mod.Filter([]string{"*"}, excludePatterns)
-				if !mod.Empty() {
-					ch <- mod.All()
+				filteredMod, err := mod.Filter([]string{"**/*"}, excludePatterns)
+				if err != nil {
+					log.Shout("Error filtering watches: %s", err)
+				}
+				if !filteredMod.Empty() {
+					ch <- filteredMod.All()
 				}
 			}
 		}()

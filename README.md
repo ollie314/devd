@@ -241,6 +241,15 @@ use case, development servers will usually be running locally, often with
 self-signed certificates for testing. You shouldn't use devd in cases where
 upstream cert validation matters.
 
-The *X-Forarded-Host* header is set to the devd server's address for reverse
+The *X-Forwarded-Host* header is set to the devd server's address for reverse
 proxied traffic. You might need to enable support for this in your application
 for redirects and the like to work correctly.
+
+
+# Development
+
+The scripts used to build this package for distribution can be found
+[here](https://github.com/cortesi/godist). External packages are vendored using
+[gvt](https://github.com/FiloSottile/gvt), and I use
+[deplist](https://github.com/cespare/deplist) to make sure all dependencies are
+covered.
